@@ -3,12 +3,12 @@
 PDF 읽을거리 서비스를 제공하는 사이트에서 새 글을 받아 지정된 공간에 업로드 합니다.
 
 ## 지원하는 사이트
-* [매경 다이제스트](http://digest.mk.co.kr, "매경 다이제스트")
+* [매경 다이제스트](http://digest.mk.co.kr)
   * PDF(A4, Kindle)
   * 오디오북
 
 ## 지원하는 클라우드 서비스
-* [Dropbox](https://dropbox.com, "Dropbox")
+* [Dropbox](https://dropbox.com)
 
 ## 사용법
 ### Docker
