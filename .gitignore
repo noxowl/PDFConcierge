@@ -1,7 +1,7 @@
 .DS_Store
 .idea
 *.yml
-*.lock
 __pycache__/
 *.py[cod]
 *$py.class
+downloads/

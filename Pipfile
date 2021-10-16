@@ -6,6 +6,9 @@ name = "pypi"
 [packages]
 requests = "*"
 beautifulsoup4 = "*"
+dropbox = "*"
+tqdm = "*"
+pyyaml = "*"
 
 [dev-packages]
 
