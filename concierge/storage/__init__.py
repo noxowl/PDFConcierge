@@ -1,8 +1,11 @@
 import yaml
 
+from ..logger import get_logger
+
 
 class Storage(object):
     def __init__(self, storage_type, storage_token):
+        self.logger = get_logger(__name__)
         self.type = storage_type
         self.token = storage_token
         self.chunk_size = 0

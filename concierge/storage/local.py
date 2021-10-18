@@ -1,6 +1,7 @@
 import os.path
 import shutil
 from pathlib import Path
+
 from concierge.storage import Storage
 
 
@@ -22,19 +23,21 @@ class LocalStorage(Storage):
             return True
         return False
 
-    def upload(self, file_result, path):
-        if self.connected() and self._upload_path_safety_check(path):
-            shutil.move(file_result['path'], Path(self.upload_path, path,
-                                                  '{0}{1}'.format(file_result['filename'], file_result['file_ext'])))
+    def upload(self, file_result, filetype):
+        if self.connected() and self._upload_path_safety_check(filetype, file_result['category']):
+            shutil.move(Path(file_result['path']),
+                        Path(self.upload_path, filetype, file_result['category'], '{0}{1}'
+                             .format(file_result['filename'], file_result['file_ext']))
+                        )
 
     def _history_file_safety_check(self):
         if not os.path.isfile(self.history_path):
             with open(self.history_path, 'w'):
                 pass
 
-    def _upload_path_safety_check(self, upload_path):
+    def _upload_path_safety_check(self, upload_path, category):
         try:
-            os.makedirs(Path(self.upload_path, upload_path))
+            os.makedirs(Path(self.upload_path, upload_path, category))
         except FileExistsError:
             return True
         return False
