@@ -108,6 +108,7 @@ class PDFConcierge:
             for file_result in v:
                 self.storage.upload(file_result, category)
                 if self.local_storage:
+                    self.logger.info('upload to local backup...')
                     self.local_storage.upload(file_result, category)
                 else:
                     try:
@@ -125,11 +126,11 @@ class PDFConcierge:
             files = self.mk_scraper.execute(self.mode)
             self._upload_to_storage(files)
             self.storage.history['mk'] = self.mk_scraper.history
-            self.logger.info('fetch from mk done.')
+            self.logger.info('fetch from mk digest done.')
         self.logger.info('all task done. update history data.')
         self.storage.push_history()
         if self._history_hash_unmatched():
-            self.logger.info('the history hash unmatched. send notice.')
+            self.logger.info('history hash unmatched. send notice.')
             self._send_notice()
         sys.exit()
 

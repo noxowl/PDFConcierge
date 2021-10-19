@@ -1,4 +1,5 @@
 import os.path
+import pathlib
 import shutil
 from pathlib import Path
 
@@ -21,7 +22,7 @@ class LocalStorage(Storage):
             os.makedirs(self.upload_path)
         except FileExistsError:
             return True
-        return False
+        return pathlib.Path.is_dir(self.upload_path)
 
     def upload(self, file_result, filetype):
         if self.connected() and self._upload_path_safety_check(filetype, file_result['category']):
@@ -36,11 +37,12 @@ class LocalStorage(Storage):
                 pass
 
     def _upload_path_safety_check(self, upload_path, category):
+        _p = Path(self.upload_path, upload_path, category)
         try:
-            os.makedirs(Path(self.upload_path, upload_path, category))
+            os.makedirs(_p)
         except FileExistsError:
             return True
-        return False
+        return pathlib.Path.is_dir(_p)
 
     def fetch_history(self):
         if self.connected():

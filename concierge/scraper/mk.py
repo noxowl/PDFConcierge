@@ -9,10 +9,15 @@ import tempfile
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from urllib.parse import urlparse, parse_qs
-from multiprocessing import Process, Pool
+from multiprocessing import Pool
 
 from concierge.logger import get_logger
 from concierge.scraper.common import exclude_from_history
+
+
+def title_normalizer(title) -> str:
+    return title.replace('.', '').replace('/', '-').replace(',', '')\
+        .replace('\\', '').replace('|', '').replace(':', '-').replace("\"", "")
 
 
 class MKDocument:
@@ -23,7 +28,7 @@ class MKDocument:
         self.format = convert_format
         self.filename, self.file_extension = os.path.splitext(
             os.path.basename(filename.encode('iso-8859-1').decode('cp949', 'replace')))  # R.I.P Hannakageul
-        self.filename = self.filename.replace('.', '')
+        self.filename = title_normalizer(self.filename)
         self.title = self.filename
         with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as tmp:
             tmp.write(doc)
@@ -71,29 +76,25 @@ class MKAudiobook:
         with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as tmp:
             tmp.write(audio)
             self.temp_path = tmp.name
-        self.id3_tag = eyed3.load(self.temp_path)
-        self.id3_tag.initTag(eyed3.id3.tag.ID3_V2)
-
-    def _set_thumbnail(self):
-        self.id3_tag.tag.images.set(eyed3.id3.frames.ImageFrame.FRONT_COVER, self.thumb, 'image/gif')
-        self.id3_tag.tag.save()
 
     def _set_id3(self):
-        self.id3_tag.tag.title = self.title
-        self.id3_tag.tag.artist = 'BOOKCOSMOS'
-        self.id3_tag.tag.album = 'BOOKCOSMOS'
-        self.id3_tag.tag.genre = 'Audiobook'
-        self.id3_tag.tag.comment = '{0} - {1}\nMK_Bookdigest ID: {2}' \
-            .format(self.author, self.publisher, self.id)
-        self.id3_tag.tag.save()
+        id3_tag = eyed3.load(self.temp_path)
+        id3_tag.initTag(eyed3.id3.tag.ID3_V2)
+        id3_tag.tag.title = self.title
+        id3_tag.tag.artist = 'BOOKCOSMOS'
+        id3_tag.tag.album = 'BOOKCOSMOS'
+        id3_tag.tag.genre = 'Audiobook'
+        id3_tag.tag.comments.set(
+            '{0} - {1}\nMK_Bookdigest ID: {2}'.format(self.author, self.publisher, self.id))
+        if self.thumb:
+            id3_tag.tag.images.set(eyed3.id3.frames.ImageFrame.FRONT_COVER, self.thumb, 'image/gif')
+        id3_tag.tag.save()
 
     def _result(self, filepath):
         return {'path': filepath, 'category': self.category, 'filename': self.title, 'file_ext': '.mp3'}
 
-    def convert(self):
+    def convert(self) -> dict:
         self._set_id3()
-        if self.thumb:
-            self._set_thumbnail()
         return self._result(self.temp_path)
 
 
@@ -150,8 +151,10 @@ class MkScraper:
         raw_book_info = BeautifulSoup(content, features='html.parser') \
             .find('div', style=re.compile(r'width:420px;height:40px;float:left;'))
         raw_meta = " ".join(raw_book_info.find_all('div')[1].text.split()).split('/')
+        title = raw_book_info.find('span').text
+        title = title_normalizer(title)
         book_metadata = {
-            'title': raw_book_info.find('span').text,
+            'title': title,
             'author': raw_meta[0].replace('저자 :', '').strip(),
             'publisher': raw_meta[1].replace('출판사 :', '').strip(),
             'thumb': None
@@ -225,7 +228,8 @@ class MkScraper:
             r = requests.post(self.mk_digest_download,
                               data={'book_sno': book_id, 'book_type': 'doc'}, cookies=self.cookies,
                               headers={'referer': self.mk_digest_new_books})
-        return MKDocument(book_id=book_id, filename=re.findall("filename=(.+)", r.headers.get('Content-Disposition'))[0],
+        return MKDocument(book_id=book_id,
+                          filename=re.findall("filename=(.+)", r.headers.get('Content-Disposition'))[0],
                           category=category, doc=r.content, convert_format=convert_format)
 
     def _digest_new_audiobook_scrap(self) -> dict:
@@ -242,7 +246,6 @@ class MkScraper:
             audiobooks.update({
                 name: self._digest_book_scrap('{0}?gubun={1}'.format(self.mk_digest_audiobooks, code))
             })
-            print('{0} - {1}'.format(name, len(audiobooks[name])))
         return audiobooks
 
     def _fetch_audiobook_categories(self) -> dict:
@@ -262,7 +265,7 @@ class MkScraper:
 
     def _fetch_new_audiobook_page(self, url):
         r = requests.get(url, cookies=self.cookies)
-        parse = BeautifulSoup(r.content, features='html.parser')\
+        parse = BeautifulSoup(r.content, features='html.parser') \
             .find_all('img', class_='bookimg')
         return parse
 
@@ -279,8 +282,6 @@ class MkScraper:
     def _download_audiobook(self, category: str, audiobook_id: str) -> MKAudiobook:
         self.logger.info('download start for {0} - {1}'.format(category, audiobook_id))
         raw_info = requests.get(self.mk_digest_book_detail.format(audiobook_id))
-        if raw_info.status_code != 200:
-            raise ConnectionError
         book_metadata = self._parse_book_metadata(raw_info.content)
         self.logger.info('download metadata for {0} - {1} completed'.format(category, audiobook_id))
         thumb = requests.get(self.mk_digest_book_thumb.format(audiobook_id))
@@ -290,11 +291,8 @@ class MkScraper:
         self.logger.info('download audio for {0} - {1}'.format(category, audiobook_id))
         audio = requests.get(self.mk_digest_audiobook_download.format(audiobook_id),
                              headers={'referer': self._mk_digest_url})
-        if audio.status_code != 200:
-            raise ConnectionError
         self.logger.info('download done for {0} - {1}'.format(category, audiobook_id))
-        return MKAudiobook(audiobook_id=audiobook_id, metadata=book_metadata,
-                           audio=audio.content, category=category)
+        return MKAudiobook(audiobook_id=audiobook_id, metadata=book_metadata, audio=audio.content, category=category)
 
     def _push_to_result(self, payload):
         self.logger.info('push {0} - {1} to result'.format(payload.type, payload.title))
@@ -312,11 +310,12 @@ class MkScraper:
         else:
             book_task = self._digest_all_book_scrap()
         for category, task in book_task.items():
-            self.logger.info('start download book category {0}...'.format(category))
-            self.logger.info(task)
-            for t in exclude_from_history(task, self.history['book']):
-                self.logger.info('start download book {0}...'.format(t))
-                pool.apply_async(self._download_book, (category, t, self.pdf_format), callback=self._push_to_result)
+            filtered_task = exclude_from_history(task, self.history['book'])
+            if filtered_task:
+                self.logger.info('start fetch book from category {0}...'.format(category))
+                for t in filtered_task:
+                    self.logger.info('start download book {0}...'.format(t))
+                    pool.apply_async(self._download_book, (category, t, self.pdf_format), callback=self._push_to_result)
         pool.close()
         pool.join()
 
@@ -326,10 +325,13 @@ class MkScraper:
             audiobook_task = self._digest_new_audiobook_scrap()
         else:
             audiobook_task = self._digest_all_audiobook_scrap()
-        for category, task in tqdm(audiobook_task.items()):
-            self.logger.info('start download audiobook {0}...'.format(category))
-            for t in exclude_from_history(task, self.history['audiobook']):
-                pool.apply_async(self._download_audiobook, (category, t, ), callback=self._push_to_result)
+        for category, task in audiobook_task.items():
+            filtered_task = exclude_from_history(task, self.history['audiobook'])
+            if filtered_task:
+                self.logger.info('start fetch audiobook from category {0}...'.format(category))
+                for t in filtered_task:
+                    self.logger.info('start download audiobook {0}...'.format(t))
+                    pool.apply_async(self._download_audiobook, (category, t), callback=self._push_to_result)
         pool.close()
         pool.join()
 
