@@ -11,12 +11,6 @@ concierge_mode = {
     'all': 'fetch_all'
 }
 
-conflict_mode = {
-    'add': 'add',
-    'overwrite': 'overwrite',
-    'update': 'update'
-}
-
 pdf_format = {
     'a4': 'a4',
     'kindle': 'kindle',
@@ -36,13 +30,6 @@ def concierge_execute_mode(mode) -> str:
         return concierge_mode['new']
 
 
-def when_conflict_mode(condition) -> str:
-    try:
-        return conflict_mode[condition]
-    except KeyError:
-        return conflict_mode['overwrite']
-
-
 def pdf_format_mode(mode) -> str:
     try:
         return pdf_format[mode]
@@ -59,7 +46,6 @@ class PDFConcierge:
         self.history_hash = None
         self.mode = concierge_execute_mode(os.environ.get('PDFC_MODE'))
         self.allow_local_backup = is_true(os.environ.get('PDFC_ALLOW_LOCAL_BACKUP'))
-        self.when_conflict = when_conflict_mode(os.environ.get('PDFC_WHEN_CONFLICT'))
         self.pdf_format = pdf_format_mode(os.environ.get('PDFC_PDF_FORMAT'))
         self.use_history = is_true(os.environ.get('PDFC_USE_HISTORY'))
         # self.history_reference = os.environ.get('PDFC_HISTORY_REFERENCE')
