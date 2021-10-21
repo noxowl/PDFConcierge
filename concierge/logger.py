@@ -2,8 +2,9 @@ import logging
 
 
 def get_logger(module_name):
-    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(module_name)
-    stream = logging.StreamHandler()
-    logger.addHandler(stream)
+    if not logger.handlers:
+        stream = logging.StreamHandler()
+        logger.addHandler(stream)
+        logger.setLevel(level=logging.INFO)
     return logger
