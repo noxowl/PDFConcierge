@@ -1,5 +1,4 @@
 import os
-
 import bs4.element
 import eyed3.id3
 import requests
@@ -22,6 +21,15 @@ def title_normalizer(title) -> str:
 
 class MKDocument:
     def __init__(self, book_id, filename, category, doc, convert_format):
+        """
+        this class will refactored.
+
+        :param book_id:
+        :param filename:
+        :param category:
+        :param doc:
+        :param convert_format:
+        """
         self.type = 'book'
         self.id = book_id
         self.category = category
@@ -63,6 +71,14 @@ class MKDocument:
 
 class MKAudiobook:
     def __init__(self, audiobook_id, metadata, category, audio):
+        """
+        this class will refactored.
+
+        :param audiobook_id:
+        :param metadata:
+        :param category:
+        :param audio:
+        """
         self.type = 'audiobook'
         self.id = audiobook_id
         self.category = category
@@ -100,6 +116,14 @@ class MKAudiobook:
 
 class MkScraper:
     def __init__(self, mk_id: str, mk_pw: str, pdf_format: str, history: dict):
+        """
+        This class will refactored.
+
+        :param mk_id:
+        :param mk_pw:
+        :param pdf_format:
+        :param history:
+        """
         self.logger = get_logger(__name__)
         self.id = mk_id
         self.pw = mk_pw
