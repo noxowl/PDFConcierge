@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 
 from concierge.logger import get_logger
-from concierge.scraper.common import template_path, template_loader
+from concierge.scraper.common import template_path, template_loader, title_normalizer
 
 
 @dataclass
@@ -29,7 +29,7 @@ class AsahiEditorial:
         self.url = url
         self.id = article_id
         self.date = article_date
-        self.title = title
+        self.title = title_normalizer(title).strip()
         self.body = body
         self.figure = figure
         self.template_path = template_path
@@ -210,5 +210,4 @@ class AsahiScraper:
         if articles:
             for a in articles:
                 self._push_to_result(self._fetch_editorial(a))
-            print(self._result)
         return self._result
