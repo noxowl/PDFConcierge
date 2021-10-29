@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 
 from concierge.logger import get_logger
-from concierge.scraper.common import template_path, template_loader, title_normalizer
+from concierge.scraper.common import template_path, template_loader, title_normalizer, render_option_us_letter
 
 
 @dataclass
@@ -60,17 +60,7 @@ class AsahiEditorial:
 
         :return:
         """
-        render_options = {
-            'page-size': 'Letter',
-            'margin-top': '0.4in',
-            'margin-right': '0.4in',
-            'margin-bottom': '0.4in',
-            'margin-left': '0.4in',
-            'encoding': "UTF-8",
-            'no-outline': None,
-            'enable-local-file-access': None
-        }
-        self.temp_output.write(pdfkit.from_string(self.temp_html, output_path=False, options=render_options))
+        self.temp_output.write(pdfkit.from_string(self.temp_html, output_path=False, options=render_option_us_letter))
         self.temp_output.close()
 
     def develop(self):
