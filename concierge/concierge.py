@@ -4,7 +4,7 @@ import sys
 
 from .logger import get_logger
 from .storage import Storage, LocalStorage
-from .scraper import MkScraper
+from .scraper import MkScraper, AsahiScraper
 
 concierge_mode = {
     'new': 'fetch_new',
@@ -43,6 +43,7 @@ class PDFConcierge:
         self.storage = None
         self.local_storage = None
         self.mk_scraper = None
+        self.asahi_scraper = None
         self.history_hash = None
         self.mode = concierge_execute_mode(os.environ.get('PDFC_MODE'))
         self.allow_local_backup = is_true(os.environ.get('PDFC_ALLOW_LOCAL_BACKUP'))
@@ -53,6 +54,7 @@ class PDFConcierge:
         self.storage_token = os.environ.get('PDFC_CLOUD_TOKEN')
         self.mk_id = os.environ.get('PDFC_MK_ID')
         self.mk_pw = os.environ.get('PDFC_MK_PW')
+        self.asahi = os.environ.get('PDFC_ASAHI_NEWS')
 
     def initialize(self):
         self.storage = self._set_storage()
@@ -72,6 +74,8 @@ class PDFConcierge:
             self.mk_scraper = MkScraper(mk_id=self.mk_id, mk_pw=self.mk_pw,
                                         pdf_format=self.pdf_format, history=mk_history)
             self.logger.info('mk digest initialized.')
+        if self.asahi:
+            self.asahi_scraper = AsahiScraper(pdf_format=self.pdf_format)
         self.history_hash = self._make_history_hash()
 
     def _make_history_hash(self):
@@ -113,6 +117,9 @@ class PDFConcierge:
             self._upload_to_storage(files)
             self.storage.history['mk'] = self.mk_scraper.history
             self.logger.info('fetch from mk digest done.')
+        if self.asahi_scraper:
+            files = self.asahi_scraper.download_editorials()
+            self._upload_to_storage(files)
         self.logger.info('all task done. update history data.')
         self.storage.push_history()
         if self._history_hash_unmatched():
