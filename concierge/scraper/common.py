@@ -1,7 +1,14 @@
 import os
+from dataclasses import dataclass
 
 import jinja2
 import pathlib
+
+
+@dataclass
+class Figure:
+    image: bytes
+    caption: str
 
 
 def exclude_from_history(tasks, history) -> list:

@@ -6,23 +6,15 @@ import tempfile
 import urllib.parse
 from bs4 import BeautifulSoup
 from requests_html import HTMLSession
-from multiprocessing import Pool
-from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 
 from concierge.logger import get_logger
-from concierge.scraper.common import template_path, template_loader, title_normalizer, render_option_us_letter
-
-
-@dataclass
-class AsahiEditorialFigure:
-    image: bytes
-    caption: str
+from concierge.scraper.common import Figure, template_path, template_loader, title_normalizer, render_option_us_letter
 
 
 class AsahiEditorial:
     def __init__(self, url: str, article_id: str, article_date: datetime.date,
-                 title: str, body: list, figure: AsahiEditorialFigure):
+                 title: str, body: list, figure: Figure):
         self.logger = get_logger(__name__)
         self.type = 'editorial'
         self.lang = 'ja'
@@ -34,11 +26,11 @@ class AsahiEditorial:
         self.figure = figure
         self.template_path = template_path
         self.template = template_loader.get_template('asahi-editorial.html')
+        self.temp_html = self._render_html()
+        self.temp_output = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
         self.temp_image = tempfile.NamedTemporaryFile()
         if self.figure.image:
             self.temp_image.write(self.figure.image)
-        self.temp_html = self._render_html()
-        self.temp_output = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
 
     def _render_html(self):
         return self.template.render(
@@ -129,7 +121,7 @@ class AsahiScraper:
         headers = contents.find('h1')
         return headers.text
 
-    def _extract_editorial_figure(self, contents: bs4.element.Tag) -> AsahiEditorialFigure:
+    def _extract_editorial_figure(self, contents: bs4.element.Tag) -> Figure:
         """
 
         :param contents:
@@ -147,7 +139,7 @@ class AsahiScraper:
                 image = r.content
         except ConnectionError:
             pass
-        return AsahiEditorialFigure(image=image, caption=caption)
+        return Figure(image=image, caption=caption)
 
     def _extract_editorial_body(self, contents: bs4.element.Tag) -> list:
         """
