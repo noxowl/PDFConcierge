@@ -11,12 +11,7 @@ from urllib.parse import urlparse, parse_qs
 from multiprocessing import Pool
 
 from concierge.logger import get_logger
-from concierge.scraper.common import exclude_from_history
-
-
-def title_normalizer(title) -> str:
-    return title.replace('.', '').replace('/', '-').replace(',', '')\
-        .replace('\\', '').replace('|', '').replace(':', '-').replace("\"", "")
+from concierge.scraper.common import exclude_from_history, title_normalizer
 
 
 class MKDocument:
