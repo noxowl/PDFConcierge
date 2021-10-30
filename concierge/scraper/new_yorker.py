@@ -3,6 +3,7 @@ import os.path
 import pdfkit
 import requests
 import tempfile
+import feedparser
 import urllib.parse
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
@@ -11,22 +12,21 @@ from concierge.logger import get_logger
 from concierge.scraper.common import Figure, template_path, template_loader, title_normalizer, render_option_us_letter
 
 
-class AsahiEditorial:
+class NewYorkerEditorial:
     def __init__(self, url: str, article_id: str, article_date: datetime.date,
                  title: str, body: list, figure: Figure):
         self.logger = get_logger(__name__)
         self.type = 'editorial'
-        self.lang = 'ja'
+        self.lang = 'en'
         self.url = url
         self.id = article_id
         self.date = article_date
         self.title = title.strip()
-        self.filename = '{1}_{0}'.format(
-            title_normalizer(self.title).replace('（社説）', '').replace(' ', '-').replace('　', '-'), self.date)
+        self.filename = '{1}_{0}'.format(title_normalizer(self.title).lower().replace(' ', '-'), self.date)
         self.body = body
         self.figure = figure
         self.template_path = template_path
-        self.template = template_loader.get_template('asahi-editorial.html')
+        self.template = template_loader.get_template('new-yorker-editorial.html')
         self.temp_output = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
         self.temp_image = tempfile.NamedTemporaryFile()
         if self.figure.image:
@@ -59,7 +59,7 @@ class AsahiEditorial:
     def develop(self):
         self.logger.info('develop editorial...')
         self._render_us_letter()
-        return {'path': self.temp_output.name, 'category': 'asahi', 'filename': self.filename, 'file_ext': '.pdf'}
+        return {'path': self.temp_output.name, 'category': 'new-yorker', 'filename': self.filename, 'file_ext': '.pdf'}
 
     def clear(self):
         self.temp_image.close()
@@ -72,20 +72,18 @@ def _extract_article_id(url: str) -> str:
     :return:
     """
     _path = urllib.parse.urlparse(url).path
-    editorial_id, extension = os.path.splitext(os.path.basename(_path))
-    return editorial_id
+    article_id = os.path.basename(_path)
+    return article_id
 
 
-class AsahiScraper:
+class NewYorkerScraper:
     def __init__(self, pdf_format: str):
         self.logger = get_logger(__name__)
         self.pdf_format = pdf_format
-        self.timezone = timezone(timedelta(hours=+9), 'JST')
+        self.timezone = timezone(timedelta(hours=-4), 'EDT')
         self.today = datetime.now(tz=self.timezone)
         self._result = {'editorial': []}
-        self._asahi_news_url = 'https://www.asahi.com'
-        self.asahi_editorial_view_url = self._asahi_news_url + '/articles/{0}.html?iref=pc_rensai_long_16_article'
-        self.asahi_editorials_url = 'https://www.asahicom.jp/rensai/json/da16.json'
+        self.new_yorker_feed_url = 'https://www.newyorker.com/feed/news/daily-comment'
 
     def _fetch_editorial_list(self) -> list:
         """
@@ -94,10 +92,11 @@ class AsahiScraper:
         :return: List of editorial article path.
         """
         editorials = []
-        r = requests.get(self.asahi_editorials_url, headers={'referer': self._asahi_news_url})
-        for article in r.json()['items']:
-            if datetime.strptime(article['release_date'], '%Y%m%d%H%M%S').date() == self.today.date():
-                editorials.append(article['id'])
+        feed = feedparser.parse(self.new_yorker_feed_url)
+        for f in feed['entries']:
+            if datetime(*f['published_parsed'][:6], tzinfo=timezone.utc).astimezone(self.timezone).date()\
+                    == self.today.date():
+                editorials.append(f['link'])
         return editorials
 
     def _fetch_editorial_page(self, url: str) -> bs4.element.Tag:
@@ -107,7 +106,7 @@ class AsahiScraper:
         :return:
         """
         r = requests.get(url)
-        parse = BeautifulSoup(r.content, features='html.parser').find('main')
+        parse = BeautifulSoup(r.content, features='html.parser').find('article')
         return parse
 
     def _extract_editorial_title(self, contents: bs4.element.Tag) -> str:
@@ -148,24 +147,23 @@ class AsahiScraper:
         body = []
         content = contents.find_all('p')
         for p in content:
-            if p.text and not p.text.endswith('分'):
+            if p.text and not p.parent.attrs['class'][0] == 'scrap-modal-comp':
                 body.append(p.text)
         return body
 
-    def _fetch_editorial(self, page_id: str) -> AsahiEditorial:
+    def _fetch_editorial(self, url: str) -> NewYorkerEditorial:
         """
 
         :param url:
         :return:
         """
         self.logger.info('fetch editorial...')
-        url = self.asahi_editorial_view_url.format(page_id)
         article_id = _extract_article_id(url)
         contents = self._fetch_editorial_page(url)
         title = self._extract_editorial_title(contents)
-        figure = self._extract_editorial_figure(contents)
         body = self._extract_editorial_body(contents)
-        return AsahiEditorial(url=url, article_id=article_id, article_date=self.today.date(),
+        figure = self._extract_editorial_figure(contents)
+        return NewYorkerEditorial(url=url, article_id=article_id, article_date=self.today.date(),
                               title=title, body=body, figure=figure)
 
     def _push_to_result(self, payload) -> None:
@@ -185,9 +183,11 @@ class AsahiScraper:
 
         :return:
         """
-        self.logger.info('download editorials from Asahi...')
+        self.logger.info('download editorials from New Yorker...')
         articles = self._fetch_editorial_list()
         if articles:
             for a in articles:
                 self._push_to_result(self._fetch_editorial(a))
         return self._result
+
+

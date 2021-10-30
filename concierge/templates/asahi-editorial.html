@@ -1,17 +1,11 @@
 {% extends "editorial-template.html" %}
 {% block press %}朝日新聞{% endblock %}
-{% block logo %}<object type="image/svg+xml" data="{{template_path}}/asahi-logo.svg"></object>{% endblock %}
+{% block logo %}<object type="image/png" data="{{template_path}}/asahi-logo.png"></object>{% endblock %}
 {% block style %}
 <style>
     p { font-size: 13pt; line-height: 1.6; letter-spacing: 0; text-align: left; margin: 10px;}
-    #figure {
-        float: left;
-        margin: 20px;
-        width: 300px;
-    }
-    #figure p.caption {
-        font-size: 10px;
-    }
+    #figure { float: left; margin: 20px; width: 300px; }
+    #figure p.caption { font-size: 10px; }
 </style>
 {% endblock %}
 {% block content %}

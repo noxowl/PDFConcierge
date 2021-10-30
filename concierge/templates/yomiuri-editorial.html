@@ -1,0 +1,11 @@
+{% extends "editorial-template.html" %}
+{% block press %}読売新聞{% endblock %}
+{% block logo %}<object type="image/png" data="{{template_path}}/yomiuri-logo.png" width="300px"></object>{% endblock %}
+{% block style %}
+<style>
+    p { font-size: 13pt; line-height: 1.6; letter-spacing: 0; text-align: left; margin: 10px;}
+</style>
+{% endblock %}
+{% block content %}
+{% for a in article %}<p>{{ a }}</p>{% endfor %}
+{% endblock %}

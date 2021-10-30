@@ -6,23 +6,20 @@
     <style>
         body {
             min-height: 100%;
-            font-family: "メイリオ", "ヒラギノ角ゴシック", "Arial", "sans-serif";
+            font-family: "Arial", "メイリオ", "ヒラギノ角ゴシック", "Liberation Sans", "Noto Sans CJK JP", "Noto Sans CJK KR", "sans-serif";
         }
         header {
             width: 100%;
-            display: flex;
-            flex-flow: row wrap;
         }
         header div#logo {
             text-align: left;
-            width: 50%;
             height: 60px;
         }
         section#content h1 {
             font-size: 24px;
         }
         section#content p {
-            font-family: "MS P明朝", "ヒラギノ明朝", "Times", "serif";
+            font-family: "Times", "MS P明朝", "ヒラギノ明朝", "Liberation Serif", "Noto Serif CJK JP", "Noto Serif CJK KR", "serif";
         }
         footer {
             font-size: 10px;
@@ -49,10 +46,10 @@
     </article>
     <footer>
         <div id="meta">
-            {{ date }} / {{ article_id }}
+            {{ date }}
         </div>
         <div id="reference">
-            <span>出典：{{ reference_url }}</span>
+            <span>Ref: {{ reference_url }}</span>
         </div>
     </footer>
 </body>

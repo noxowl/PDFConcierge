@@ -2,7 +2,10 @@ FROM pypy:3.7-slim
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    ca-certificates \
+    ca-certificates gcc \
+    libxml2 libxml2-dev libxslt1-dev zlib1g-dev \
+    fonts-liberation fonts-noto-cjk \
+    wkhtmltopdf \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

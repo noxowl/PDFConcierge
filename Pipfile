@@ -10,9 +10,9 @@ dropbox = "*"
 tqdm = "*"
 pyyaml = "*"
 eyed3 = "*"
-requests-html = "*"
 jinja2 = "*"
 pdfkit = "*"
+feedparser = "*"
 
 [dev-packages]
 

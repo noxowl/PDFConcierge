@@ -4,7 +4,7 @@ import sys
 
 from .logger import get_logger
 from .storage import Storage, LocalStorage
-from .scraper import MkScraper, AsahiScraper
+from .scraper import MkScraper, AsahiScraper, YomiuriScraper, NewYorkerScraper
 
 concierge_mode = {
     'new': 'fetch_new',
@@ -44,6 +44,8 @@ class PDFConcierge:
         self.local_storage = None
         self.mk_scraper = None
         self.asahi_scraper = None
+        self.yomiuri_scraper = None
+        self.new_yorker_scraper = None
         self.history_hash = None
         self.mode = concierge_execute_mode(os.environ.get('PDFC_MODE'))
         self.allow_local_backup = is_true(os.environ.get('PDFC_ALLOW_LOCAL_BACKUP'))
@@ -54,7 +56,9 @@ class PDFConcierge:
         self.storage_token = os.environ.get('PDFC_CLOUD_TOKEN')
         self.mk_id = os.environ.get('PDFC_MK_ID')
         self.mk_pw = os.environ.get('PDFC_MK_PW')
-        self.asahi = os.environ.get('PDFC_ASAHI_NEWS')
+        self.asahi = os.environ.get('PDFC_ASAHI')
+        self.yomiuri = os.environ.get('PDFC_YOMIURI')
+        self.new_yorker = os.environ.get('PDFC_THE_NEW_YORKER')
 
     def initialize(self):
         self.storage = self._set_storage()
@@ -65,18 +69,34 @@ class PDFConcierge:
             self.storage.fetch_history()
             self.logger.info('history data fetched.')
         if self.mk_id:
-            self.logger.info('mk digest initializing...')
-            try:
-                self.storage.history['mk']
-            except KeyError:
-                self.storage.history.update({'mk': {'book': [], 'audiobook': []}})
-            mk_history = self.storage.history['mk']
-            self.mk_scraper = MkScraper(mk_id=self.mk_id, mk_pw=self.mk_pw,
-                                        pdf_format=self.pdf_format, history=mk_history)
-            self.logger.info('mk digest initialized.')
+            self._init_mk()
         if self.asahi:
-            self.asahi_scraper = AsahiScraper(pdf_format=self.pdf_format)
+            self._init_asahi()
+        if self.yomiuri:
+            self._init_yomiuri()
+        if self.new_yorker:
+            self._init_new_yorker()
         self.history_hash = self._make_history_hash()
+
+    def _init_mk(self):
+        self.logger.info('mk digest initializing...')
+        try:
+            self.storage.history['mk']
+        except KeyError:
+            self.storage.history.update({'mk': {'book': [], 'audiobook': []}})
+        mk_history = self.storage.history['mk']
+        self.mk_scraper = MkScraper(mk_id=self.mk_id, mk_pw=self.mk_pw,
+                                    pdf_format=self.pdf_format, history=mk_history)
+        self.logger.info('mk digest initialized.')
+
+    def _init_asahi(self):
+        self.asahi_scraper = AsahiScraper(pdf_format=self.pdf_format)
+
+    def _init_yomiuri(self):
+        self.yomiuri_scraper = YomiuriScraper(pdf_format=self.pdf_format)
+
+    def _init_new_yorker(self):
+        self.new_yorker_scraper = NewYorkerScraper(pdf_format=self.pdf_format)
 
     def _make_history_hash(self):
         try:
@@ -120,8 +140,16 @@ class PDFConcierge:
         if self.asahi_scraper:
             files = self.asahi_scraper.download_editorials()
             self._upload_to_storage(files)
-        self.logger.info('all task done. update history data.')
-        self.storage.push_history()
+        if self.yomiuri_scraper:
+            files = self.yomiuri_scraper.download_editorials()
+            self._upload_to_storage(files)
+        if self.new_yorker_scraper:
+            files = self.new_yorker_scraper.download_editorials()
+            self._upload_to_storage(files)
+        self.logger.info('all task done.')
+        if self.use_history:
+            self.logger.info('update history data.')
+            self.storage.push_history()
         if self._history_hash_unmatched():
             self.logger.info('history hash unmatched. send notice.')
             self._send_notice()
