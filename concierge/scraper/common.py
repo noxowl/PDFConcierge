@@ -28,7 +28,7 @@ render_option_us_letter = {
             'page-size': 'Letter',
             'margin-top': '0.4in',
             'margin-right': '0.4in',
-            'margin-bottom': '0.4in',
+            'margin-bottom': '0.2in',
             'margin-left': '0.4in',
             'encoding': "UTF-8",
             'no-outline': None,
