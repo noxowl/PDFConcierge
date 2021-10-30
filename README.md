@@ -13,6 +13,8 @@
   * 社説 (US Letter PDF, 当日朝刊のみ)
 * [The New Yorker](https://www.newyorker.com)
   * Daily Comment (US Letter PDF)
+* [The Guardian](https://www.theguardian.com/)
+  * The Guardian View (US Letter PDF)
 
 ## 지원하는 클라우드 서비스
 * [Dropbox](https://dropbox.com)
@@ -28,7 +30,7 @@ docker run --rm -it --name pdf-concierge -e PDFC_CLOUD_TOKEN={YOUR TOKEN} -e PDF
 
 #### Fetch from the Press
 <code>
-docker run --rm -it --name pdf-concierge -e PDFC_CLOUD_TOKEN={YOUR TOKEN} -e PDFC_ASAHI=true -e PDFC_YOMIURI=true -e PDFC_NEW_YORKER=true noxowl/pdf-concierge:latest
+docker run --rm -it --name pdf-concierge -e PDFC_CLOUD_TOKEN={YOUR TOKEN} -e PDFC_ASAHI=true -e PDFC_YOMIURI=true -e PDFC_THE_NEW_YORKER=true -e PDFC_THE_GUARDIAN=true noxowl/pdf-concierge:latest
 </code>
 
 ### 로컬에서 실행
