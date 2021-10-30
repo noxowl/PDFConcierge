@@ -13,6 +13,7 @@ eyed3 = "*"
 jinja2 = "*"
 pdfkit = "*"
 feedparser = "*"
+pytz = "*"
 
 [dev-packages]
 
