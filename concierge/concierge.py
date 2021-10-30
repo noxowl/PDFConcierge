@@ -4,7 +4,7 @@ import sys
 
 from .logger import get_logger
 from .storage import Storage, LocalStorage
-from .scraper import MkScraper, AsahiScraper, YomiuriScraper, NewYorkerScraper
+from .scraper import MkScraper, AsahiScraper, YomiuriScraper, NewYorkerScraper, GuardianScraper
 
 concierge_mode = {
     'new': 'fetch_new',
@@ -46,6 +46,7 @@ class PDFConcierge:
         self.asahi_scraper = None
         self.yomiuri_scraper = None
         self.new_yorker_scraper = None
+        self.guardian_scraper = None
         self.history_hash = None
         self.mode = concierge_execute_mode(os.environ.get('PDFC_MODE'))
         self.allow_local_backup = is_true(os.environ.get('PDFC_ALLOW_LOCAL_BACKUP'))
@@ -59,6 +60,7 @@ class PDFConcierge:
         self.asahi = os.environ.get('PDFC_ASAHI')
         self.yomiuri = os.environ.get('PDFC_YOMIURI')
         self.new_yorker = os.environ.get('PDFC_THE_NEW_YORKER')
+        self.guardian = os.environ.get('PDFC_THE_GUARDIAN')
 
     def initialize(self):
         self.storage = self._set_storage()
@@ -76,6 +78,8 @@ class PDFConcierge:
             self._init_yomiuri()
         if self.new_yorker:
             self._init_new_yorker()
+        if self.guardian:
+            self._init_guardian()
         self.history_hash = self._make_history_hash()
 
     def _init_mk(self):
@@ -97,6 +101,9 @@ class PDFConcierge:
 
     def _init_new_yorker(self):
         self.new_yorker_scraper = NewYorkerScraper(pdf_format=self.pdf_format)
+
+    def _init_guardian(self):
+        self.guardian_scraper = GuardianScraper(pdf_format=self.pdf_format)
 
     def _make_history_hash(self):
         try:
@@ -145,6 +152,9 @@ class PDFConcierge:
             self._upload_to_storage(files)
         if self.new_yorker_scraper:
             files = self.new_yorker_scraper.download_editorials()
+            self._upload_to_storage(files)
+        if self.guardian_scraper:
+            files = self.guardian_scraper.download_editorials()
             self._upload_to_storage(files)
         self.logger.info('all task done.')
         if self.use_history:

@@ -1,0 +1,17 @@
+{% extends "editorial-template.html" %}
+{% block press %}The Guardian{% endblock %}
+{% block logo %}<object type="image/png" data="{{template_path}}/guardian-logo.png" width="130px"></object>{% endblock %}
+{% block style %}
+<style>
+    h1 { margin-bottom: 10px; }
+    p { font-size: 12pt; line-height: 1.6; letter-spacing: 0; text-align: left; margin: 10px; word-break: normal; }
+    p.summary { font-size: 16px; font-weight: bold; color: gray; }
+    #figure { float: left; margin: 20px; width: 300px; }
+    #figure p.caption { font-size: 10px; }
+</style>
+{% endblock %}
+{% block content %}
+<p class="summary">{{ article[0] }}</p>
+<div id="figure"><img src="{{figure_img}}" width="100%" alt="{{figure_cap}}"><p class="caption">{{figure_cap}}</p></div>
+{% for a in article[2:] %}<p>{{ a }}</p>{% endfor %}
+{% endblock %}
