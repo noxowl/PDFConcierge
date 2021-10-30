@@ -1,6 +1,7 @@
 import bs4
 import os.path
 import pdfkit
+import pytz
 import requests
 import tempfile
 import feedparser
@@ -80,7 +81,7 @@ class NewYorkerScraper:
     def __init__(self, pdf_format: str):
         self.logger = get_logger(__name__)
         self.pdf_format = pdf_format
-        self.timezone = timezone(timedelta(hours=-4), 'EDT')
+        self.timezone = pytz.timezone('US/Eastern')
         self.today = datetime.now(tz=self.timezone)
         self._result = {'editorial': []}
         self.new_yorker_feed_url = 'https://www.newyorker.com/feed/news/daily-comment'

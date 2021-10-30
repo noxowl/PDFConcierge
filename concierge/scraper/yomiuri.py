@@ -1,6 +1,7 @@
 import bs4
 import os.path
 import pdfkit
+import pytz
 import requests
 import tempfile
 import urllib.parse
@@ -70,7 +71,7 @@ class YomiuriScraper:
     def __init__(self, pdf_format: str):
         self.logger = get_logger(__name__)
         self.pdf_format = pdf_format
-        self.timezone = timezone(timedelta(hours=+9), 'JST')
+        self.timezone = pytz.timezone('Asia/Tokyo')
         self.today = datetime.now(tz=self.timezone)
         self._result = {'editorial': []}
         self._yomiuri_news_url = 'https://www.yomiuri.co.jp'
